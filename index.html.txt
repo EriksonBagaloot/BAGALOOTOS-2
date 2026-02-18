@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Los Muertos Bagalootos</title>
+
+<style>
+body {
+    margin: 0;
+    font-family: 'Arial', sans-serif;
+    background: #0b0b0b;
+    color: #eaeaea;
+    text-align: center;
+}
+
+/* Header */
+header {
+    padding: 30px;
+    background: linear-gradient(180deg, #0b0b0b, #1b0f14);
+}
+header img {
+    width: 150px;
+}
+h1 {
+    font-size: 3em;
+    letter-spacing: 3px;
+}
+
+/* Language Flags */
+.lang {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+}
+.lang img {
+    width: 30px;
+    cursor: pointer;
+    margin-left: 5px;
+}
+
+/* Vinyl Player */
+.player {
+    margin-top: 40px;
+}
+.vinyl {
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #111 30%, #000 60%);
+    border: 6px solid #222;
+    animation: spin 5s linear infinite;
+    animation-play-state: paused;
+    margin: auto;
+}
+@keyframes spin {
+    100% { transform: rotate(360deg); }
+}
+
+/* Buttons */
+button {
+    background: #2a0f19;
+    border: none;
+    color: white;
+    padding: 12px 20px;
+    margin: 10px;
+    cursor: pointer;
+    border-radius: 5px;
+}
+button:hover {
+    background: #5c1a2a;
+}
+
+/* Tracklist */
+.track {
+    margin: 15px;
+    padding: 10px;
+    background: #120b10;
+    border-radius: 10px;
+}
+
+/* Waveform */
+canvas {
+    width: 90%;
+    height: 100px;
+    background: #000;
+    margin-top: 20px;
+}
+
+/* Footer */
+footer {
+    margin-top: 50px;
+    padding: 20px;
+    background: #050505;
+    font-size: 0.9em;
+}
+
+/* Mobile */
+@media (max-width: 600px) {
+    h1 { font-size: 2em; }
+    .vinyl { width: 140px; height: 140px; }
+}
+</style>
+</head>
+
+<body oncontextmenu="return false">
+
+<div class="lang">
+<img src="https://flagcdn.com/w20/de.png" onclick="setLang('de')">
+<img src="https://flagcdn.com/w20/us.png" onclick="setLang('en')">
+<img src="https://flagcdn.com/w20/es.png" onclick="setLang('es')">
+</div>
+
+<header>
+<!-- 👉 DEIN LOGO HIER REIN (logo.png in GitHub hochladen) -->
+<img src="logo.png" alt="Los Muertos Bagalootos Logo">
+<h1>LOS MUERTOS BAGALOOTOS</h1>
+<p id="bio"></p>
+</header>
+
+<div class="player">
+<div class="vinyl" id="vinyl"></div>
+
+<br>
+<button onclick="playAll()">▶ Play All</button>
+<button onclick="shuffleTracks()">🔀 Shuffle</button>
+
+<canvas id="waveform"></canvas>
+</div>
+
+<div id="tracks"></div>
+
+<footer>
+<p>💀 Donations: Coming Soon</p>
+<p>
+<a href="https://instagram.com/DEININSTAGRAM" target="_blank">Instagram</a> |
+<a href="https://soundcloud.com/DEINSOUNDCLOUD" target="_blank">SoundCloud</a>
+</p>
+</footer>
+
+<audio id="audio" controlslist="nodownload noplaybackrate" hidden></audio>
+
+<script>
+// 🔥 TRACKLIST
+const tracks = [
+ {title:"One Thing (P. by DFK Beats)", url:"https://res.cloudinary.com/dsw4wglet/video/upload/v1771341507/DFK_new_project_u1awo2.mp3"},
+ {title:"Cozy Couche", url:"https://res.cloudinary.com/dsw4wglet/video/upload/v1771340659/AAACOZYCOUCH_cjvk9p.mp3"}
+];
+
+let audio = document.getElementById("audio");
+let vinyl = document.getElementById("vinyl");
+let trackIndex = 0;
+
+// BIO TEXT
+const bio = {
+de:"Wir sind die Bagalooten – Los Muertos Bagalootos – ein Rap-Kollektiv aus Niedersachsen. Roh, ehrlich, kompromisslos.",
+en:"We are the Bagalooten – Los Muertos Bagalootos – a rap collective from Germany. Raw, honest, uncompromising.",
+es:"Somos los Bagalooten – Los Muertos Bagalootos – un colectivo de rap. Crudo, real y sin compromisos."
+};
+
+function setLang(l) {
+ document.getElementById("bio").innerText = bio[l];
+}
+setLang("de");
+
+// BUILD TRACKLIST
+const trackDiv = document.getElementById("tracks");
+tracks.forEach((t,i)=>{
+ let d = document.createElement("div");
+ d.className="track";
+ d.innerHTML = <b>${t.title}</b><br><button onclick="playTrack(${i})">Play</button>;
+ trackDiv.appendChild(d);
+});
+
+function playTrack(i){
+ trackIndex = i;
+ audio.src = tracks[i].url;
+ audio.play();
+ vinyl.style.animationPlayState = "running";
+}
+
+function playAll(){
+ playTrack(trackIndex);
+ audio.onended = ()=>{
+   trackIndex++;
+   if(trackIndex < tracks.length) playTrack(trackIndex);
+ };
+}
+
+function shuffleTracks(){
+ tracks.sort(()=>Math.random()-0.5);
+ trackDiv.innerHTML="";
+ tracks.forEach((t,i)=>{
+  let d=document.createElement("div");
+  d.className="track";
+  d.innerHTML=<b>${t.title}</b><br><button onclick="playTrack(${i})">Play</button>;
+  trackDiv.appendChild(d);
+ });
+}
+
+// 🔊 WAVEFORM VISUALIZER
+const canvas = document.getElementById("waveform");
+const ctx = canvas.getContext("2d");
+let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+let analyser = audioCtx.createAnalyser();
+let source = audioCtx.createMediaElementSource(audio);
+source.connect(analyser);
+analyser.connect(audioCtx.destination);
+
+function draw(){
+ requestAnimationFrame(draw);
+ let data = new Uint8Array(analyser.frequencyBinCount);
+ analyser.getByteFrequencyData(data);
+ ctx.clearRect(0,0,canvas.width,canvas.height);
+ for(let i=0;i<data.length;i++){
+  let h=data[i];
+  ctx.fillStyle="#5c1a2a";
+  ctx.fillRect(i,canvas.height-h/2,2,h);
+ }
+}
+draw();
+
+// HARDCORE DOWNLOAD BLOCK
+document.addEventListener("keydown", e=>{
+ if(e.ctrlKey && (e.key==="s"||e.key==="u"||e.key==="p")) e.preventDefault();
+});
+</script>
+
+</body>
+</html>
